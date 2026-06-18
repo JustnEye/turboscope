@@ -10,9 +10,9 @@ after the first batch of >= 1,000 vectors). It fits two scalars per
 coordinate — a shift and a scale — that map each rotated coordinate's
 empirical 5/95% quantiles onto the canonical Beta((d-1)/2, (d-1)/2)
 marginal. The Lloyd-Max codebook was built for that Beta distribution.
-When new data has a meaningfully different structure — a different
+When new data has a meaningfully different structure, a different
 embedding model, a different document domain, different norm
-characteristics — the frozen calibration mis-fits, and recall silently
+characteristics, the frozen calibration ends up mis-fitting, and recall silently
 degrades before any monitoring threshold is crossed.
 
 This module gives you a leading indicator: it detects distribution
