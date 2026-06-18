@@ -1,0 +1,43 @@
+[package]
+name = "turboscope"
+version = "0.1.0"
+edition = "2021"
+description = "Exact top-k kernel for turboscope's shadow-recall sampler"
+license = "MIT"
+publish = false
+
+# The compiled artifact is the Python extension module `turboscope._turboscope`.
+# maturin's `module-name = "turboscope._turboscope"` (pyproject.toml) expects the
+# cdylib's name to be `_turboscope`, which must also match the `#[pymodule] fn
+# _turboscope` in src/lib.rs.
+[lib]
+name = "_turboscope"
+crate-type = ["cdylib"]
+
+[dependencies]
+# pyo3: the `extension-module` feature keeps us from linking libpython (so the
+# wheel loads against the host interpreter), and `abi3-py310` builds a single
+# stable-ABI wheel valid on CPython 3.10+ — matching requires-python in
+# pyproject.toml and the `features = ["pyo3/extension-module"]` declared there.
+pyo3 = { version = "0.23", features = ["extension-module", "abi3-py310"] }
+
+# numpy: the PyArray2 / PyReadonlyArray2 bridge and the re-exported `ndarray`
+# (used as `numpy::ndarray::Array2`). Its version is paired with pyo3 0.23.
+numpy = "0.23"
+
+# faer: pure-Rust GEMM for the score matrix (no external BLAS). The kernel uses
+# `faer::mat::from_row_major_slice{,_mut}`, `faer::linalg::matmul::matmul`, and
+# `faer::Parallelism::Rayon`.
+faer = "0.19"
+
+# rayon: parallelises the per-query top-k pass across query rows.
+rayon = "1"
+
+# ordered-float: `NotNan<f32>` so f32 scores can live in a BinaryHeap.
+ordered-float = "4"
+
+[profile.release]
+# The kernel is numeric and latency-sensitive; optimise hard.
+opt-level = 3
+lto = "thin"
+codegen-units = 1

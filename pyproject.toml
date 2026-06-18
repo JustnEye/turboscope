@@ -1,0 +1,98 @@
+[build-system]
+requires = ["maturin>=1.12,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "turboscope"
+version = "0.1.0"
+description = "Observability wrapper for turbovec: live recall estimation, distribution shift detection, and latency monitoring"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [
+    { name = "Your Name", email = "you@example.com" },
+]
+keywords = [
+    "vector-search",
+    "observability",
+    "monitoring",
+    "ann",
+    "quantization",
+    "recall",
+    "drift-detection",
+    "turbovec",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Rust",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: System :: Monitoring",
+]
+
+# Hard dependencies only. All three are required at import time:
+#   turbovec  — the index being wrapped
+#   numpy     — reservoir sampling, exact_topk fallback, drift signals
+#   rich      — dashboard rendering (dashboard.py imports at module level)
+#
+# requires-python = ">=3.10" because:
+#   - dataclass(slots=True) was introduced in Python 3.10
+#   - turbovec itself supports 3.9+, so this is the only tighter constraint
+#     we introduce; document it so users aren't surprised
+dependencies = [
+    "turbovec>=0.7.0",
+    "numpy>=1.20",
+    "rich>=10.0",
+]
+
+[project.urls]
+Homepage   = "https://github.com/yourname/turboscope"
+Repository = "https://github.com/yourname/turboscope"
+Issues     = "https://github.com/yourname/turboscope/issues"
+
+[project.scripts]
+# Allows: turboscope --index my_index.tvim [--json] [--interval 2.0]
+turboscope = "turboscope.dashboard:_cli"
+
+[project.optional-dependencies]
+# Development: build the Rust extension, run tests, lint
+dev = [
+    "maturin>=1.12,<2.0",
+    "pytest>=7.0",
+    "pytest-xdist",       # parallel test execution
+]
+
+[tool.maturin]
+# Cargo.toml is at the project root alongside pyproject.toml.
+manifest-path = "Cargo.toml"
+
+# Build the extension module as turboscope._turboscope.
+# This places the compiled .so/.pyd at turboscope/_turboscope.so,
+# matching the import in sampler.py:
+#   import _turboscope
+# (Python resolves this relative to the package when inside turboscope/).
+module-name = "turboscope._turboscope"
+
+# The abi3 stable ABI flag lets maturin build a single wheel that works
+# on all Python 3.10+ interpreters without rebuilding. Matches our
+# requires-python floor. The pyo3 Cargo.toml must also declare
+# features = ["abi3-py310"] for this to take effect.
+features = ["pyo3/extension-module"]
+
+# turboscope/ is at the project root — no python-source needed.
+# maturin finds it automatically when it matches [project] name.
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# -x: stop on first failure during development
+# -q: quiet output by default; override with -v when needed
+addopts = "-x -q"
